@@ -2,7 +2,7 @@
 /.settings/
 .classpath
 .idea
-.iml
+*.iml
 .project
 dependency-reduced-pom.xml
 *.log

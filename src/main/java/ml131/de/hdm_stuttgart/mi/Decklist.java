@@ -1,3 +1,3 @@
-public class decklist{
+public class Decklist{
 
 }

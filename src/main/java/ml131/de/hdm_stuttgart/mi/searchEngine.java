@@ -8,16 +8,59 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import javax.json.Json;
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class searchEngine {
    static JSONParser parser = new JSONParser();
     static InputStream inputStream;
     static int cardcount=0;
+    static HashMap<String,Object> temporaryCard = new HashMap<>();
+    static CardFilter currentFilter=new CardFilter();
+    static String language="German";
 
+    static boolean checkFilterAndSave(String filterKey,JsonReader reader)throws IOException {
+        String cardTypeText = reader.nextString();
+        if (searchEngine.currentFilter.keySetting.get(filterKey + "IsSet") &&
+                cardTypeText.contains(searchEngine.currentFilter.cardFilter.get(filterKey).toString())) {
+            searchEngine.temporaryCard.put(filterKey, cardTypeText);
+            System.out.println(filterKey+" "+cardTypeText);
+            return true;
+        } else if (!searchEngine.currentFilter.keySetting.get(filterKey + "IsSet")) {
+            searchEngine.temporaryCard.put(filterKey, cardTypeText);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    static void runTilEndObject(JsonReader reader)throws IOException{
+        while(reader.hasNext()){
+            reader.skipValue();
+        }
+    }
+    static void fillCurrentFilter(String cmc,
+                                  String type,
+                                  String effect,
+                                  String color,
+                                  String format,
+                                  String name,
+                                  String rarity){
+
+        Map<String,Object> filterImage = new HashMap<>();
+        if(!cmc.equals("")){filterImage.put("cmt",cmc);}
+        if(!type.equals("")){filterImage.put("type",type);}
+        if(!effect.equals("")){filterImage.put("effect",effect);}
+        if(!color.equals("")){filterImage.put("color",color);}
+        if(!format.equals("")){filterImage.put("format",format);}
+        if(!name.equals("")){filterImage.put("name",name);}
+        if(!rarity.equals("")){filterImage.put("rarity",rarity);}
+       searchEngine.currentFilter=new CardFilter(filterImage);
+    }
     static {
         try {
             inputStream = new FileInputStream("/home/ml131/Desktop/stuff/Standard.json");
@@ -25,220 +68,113 @@ public class searchEngine {
             e.printStackTrace();
         }
     }
-
     static Reader inputStreamReader = new InputStreamReader(inputStream);
    static JsonReader reader = new JsonReader(inputStreamReader);
 
-    public static ArrayList applyFilterToJson(){
-        ArrayList a = new ArrayList();
 
-        try(FileReader reader = new FileReader("/home/ml131/Desktop/stuff/Standard.json")){
-
-            //  Object obj = jsonParser.parse(reader);
-            //JSONObject jsonObject = (JSONObject) obj;
-//DOM ebene
-            JSONObject obj = (JSONObject) parser.parse(reader);
-            JSONObject structure = (JSONObject) obj.get("DOM");
-//cards ebene
-            JSONArray cards = (JSONArray) structure.get("cards");
-//innerhalb der ersten karte structure
-
-            JSONObject cardsStructure = (JSONObject) cards.get(0);
-//karten informationsblock aus dem structure der ersten karte
-            JSONArray foreignData = (JSONArray) cardsStructure.get("foreignData");
-            JSONObject cardInformation= (JSONObject)foreignData.get(0);
-            cardInformation.get("name");
-
-            System.out.println(foreignData.get(0));
-            //System.out.println(cardsStructure.get("artist"));
-            // System.out.println(cards.get(1));
-            int b =0;
-            for(int i=0;i<cardsStructure.size();i++){
-                cardsStructure=(JSONObject)cards.get(i);
-                foreignData = (JSONArray) cardsStructure.get("foreignData");
-                cardInformation= (JSONObject)foreignData.get(0);
-                a.add(cardInformation.get("name"));
-                b++;
-            }
-            System.out.println(b);
-            System.out.println(structure.get("baseSetSize"));
-            // String test = (String) obj.get("DOM");
-
-            System.out.println(obj.getClass());
-
-
-
-            //JSONObject test = (JSONObject)obj.get("DOM");
-            //System.out.println(test);
-            //System.out.println(obj);
-
-            //String name = (String) jsonObject.get("cards");
-            // System.out.println(name);
-
-            // JSONArray cardlist = (JSONArray) obj;
-            //  System.out.println(cardlist);
+    static void enterSetEdition(JsonReader reader) throws IOException{
+        reader.beginObject();
+        while(reader.hasNext()) {
+            reader.nextName();
+            enterCardSection(reader);
         }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();}
-        catch (IOException e) {
-            e.printStackTrace();}
-        catch (org.json.simple.parser.ParseException e) {
-            e.printStackTrace();
-        }
-
-        return a;}
-
-        static void enterObjectinJson(JsonReader reader) throws IOException{
-
+        reader.endObject();
+    }
+    static void enterCardSection(JsonReader reader) throws IOException{
+        reader.beginObject();
+        while (reader.hasNext()) {
+            String name = reader.nextName();
+            if(name.equals("colors")){
+                ArrayList<String> cardColors=new ArrayList<>();
                 reader.beginObject();
-                while (reader.hasNext()) {
-                    String name = reader.nextName();
-                    if (name.equals("cards")) {
-                        enterArrayInJson(reader);
-                    }else if(name.equals("")){
-
-                    } else {
-                        reader.skipValue();
-                    }
+                while(reader.hasNext()){
+                    cardColors.add(reader.nextString());
+                    System.out.println("added color");
                 }
                 reader.endObject();
-        }
+                searchEngine.temporaryCard.put("colors",cardColors);
+            }
+            if (name.equals("cards")) {
+                enterForeigenData(reader);
+            }else if(name.equals("")){
 
-        static void enterArrayInJson(JsonReader reader) throws IOException {
+            } else {
+                reader.skipValue();
+            }
+        }
+        reader.endObject();
+    }
+    static void enterForeigenData(JsonReader reader) throws IOException {
 
         reader.beginArray();
-        while(reader.hasNext()){
+        while (reader.hasNext()) {
             reader.beginObject();
 
             while (reader.hasNext()) {
-                String name = reader.nextName();
-                if (name.equals("foreignData")) {
+                String jsonName = reader.nextName();
+                if (jsonName.equals("foreignData")) {
 
                     reader.beginArray();
-                    boolean german=true;
-                   while(reader.hasNext()&&german){
+                    boolean languageNotFound = true;
+                    while (reader.hasNext() && languageNotFound) {
+                        reader.beginObject();
+                      cardinformation:  while (reader.hasNext()) {
+                            String currentTokenName = reader.nextName();
+                            if (currentTokenName.equals("language") && reader.nextString().equals(searchEngine.language)) {
+                                languageNotFound = false;
+                            }
+                            //aus irgendeinem grund muss language 2 mal geskipt werden
+                            if(currentTokenName.equals(("language"))){
+                                currentTokenName=reader.nextName();
+                            }
 
+                            if (!languageNotFound&&!currentTokenName.equals("language")){
+                            switch (currentTokenName) {
+                                case "type":
+                                   if(!checkFilterAndSave("type",reader)){break cardinformation;}
+                                    break;
+                                case "name":
+                                    cardcount++;
+                                    if(!checkFilterAndSave("name",reader)){
+                                        break cardinformation;
+                                    }
+                                    //searchEngine.temporaryCard.put("name",reader.nextString());
+                                    //System.out.println(reader.nextString());
+                                    break;
+                                case "text":
+                                    if(!checkFilterAndSave("text",reader)){break cardinformation;}
+                                    //searchEngine.temporaryCard.put("effect",reader.nextString());
+                                    break;
+                                case "multiverseId":
+                                    reader.skipValue();
+                                    break;
+                                default:
+                                    //programm geht immer in den default branch
+                                    reader.skipValue();
+                                    break;
+                            }
 
-                       reader.beginObject();
-                       while (reader.hasNext()) {
-                           String name2 = reader.nextName();
-                           if(name2.equals("language")&&reader.nextString().equals("German")){
-                              german=false;
-                              reader.skipValue();
-                           }
-
-                           if (name2.equals("name")&&!german) {
-                               cardcount++;
-                               String cardname = reader.nextString();
-                               System.out.println(cardname);
-                           } else {
+                        }else {
                                reader.skipValue();
-                           }
-                       }
-                       reader.endObject();
-                   }
+                            }
+                    }
+                    searchEngine.runTilEndObject(reader);
+                    reader.endObject();
+                    }
 
-                    while(reader.hasNext()&&!german){
+
+                    while (reader.hasNext() && !languageNotFound) {
                         reader.skipValue();
                     }
-                   reader.endArray();
+                    reader.endArray();
 
                 } else {
-                reader.skipValue();
-               }
+                    reader.skipValue();
+                }
             }
             reader.endObject();
         }
         reader.endArray();
 
-        }
-
-    static void prettyprint2(JsonReader reader) throws IOException{
-
-reader.beginObject();
-        while(reader.hasNext()) {
-            reader.nextName();
-            enterObjectinJson(reader);
-        }
-reader.endObject();
-
     }
-
-    static void prettyprint(JsonReader reader) throws IOException {
-        int cardCount=0;
-
-        while (reader.hasNext()) {
-
-            JsonToken token = reader.peek();
-            switch (token) {
-                case BEGIN_ARRAY:
-                    reader.beginArray();
-                   // writer.beginArray();
-                    break;
-                case END_ARRAY:
-                    reader.endArray();
-                   // writer.endArray();
-                    break;
-                case BEGIN_OBJECT:
-                    reader.beginObject();
-                   // writer.beginObject();
-                    break;
-                case END_OBJECT:
-                    reader.endObject();
-                   // writer.endObject();
-                    break;
-                case NAME:
-
-                    if(reader.nextName().equals("DOM")){
-                        enterObjectinJson(reader);
-                    }
-                    if(reader.nextName().equals("GRN")){
-                        enterObjectinJson(reader);
-                    }
-                    if(reader.nextName().equals("M19")){
-                        enterObjectinJson(reader);
-                    }if(reader.nextName().equals("RIX")){
-                    enterObjectinJson(reader);
-                }
-                    if(reader.nextName().equals("foreignData")){
-                        while (reader.hasNext()) {
-                            String name = reader.nextName();
-                            if (name.equals("name")) {
-                                cardCount++;
-                                name = reader.nextString();
-                                System.out.println(name);
-                            } else {
-                                reader.skipValue();
-                            }
-                        }
-                    }
-                    //String name = reader.nextName();
-                    //System.out.println(name);
-                   // writer.name(name);
-                    break;
-                case STRING:
-                    String s = reader.nextString();
-                   // writer.value(s);
-                    break;
-                case NUMBER:
-                    String n = reader.nextString();
-                    //writer.value(new BigDecimal(n));
-                    break;
-                case BOOLEAN:
-                    boolean b = reader.nextBoolean();
-                    //writer.value(b);
-                    break;
-                case NULL:
-                    reader.nextNull();
-                    //writer.nullValue();
-                    break;
-                case END_DOCUMENT:
-                    System.out.println(cardCount);
-                    return;
-            }
-
-        }
-
     }
-
-}

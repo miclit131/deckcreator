@@ -1,4 +1,5 @@
 package ml131.de.hdm_stuttgart.mi;
+import  ml131.de.hdm_stuttgart.mi.JavaFxUI.UserInterface;
 
 import com.google.gson.JsonParser;
 import io.magicthegathering.javasdk.api.CardAPI;
@@ -24,6 +25,7 @@ import org.json.simple.parser.JSONParser;
 import javax.json.JsonReader;
 
 
+
 /**
  * A simple http://logging.apache.org/log4j/2.x demo,
  * see file resources/log4j2.xml for configuration options
@@ -45,8 +47,21 @@ public class App {
         if(f.exists()){
             System.out.println("connected to the file");
         }
-        searchEngine.prettyprint2(searchEngine.reader);
+// bug type filter works but not name filter
+        String name="Sonnenkamm-R";
+        searchEngine.currentFilter.nameIsSet=true;
+        searchEngine.currentFilter.keySetting.put("nameIsSet",true);
+        searchEngine.currentFilter.cardFilter.put("name",name);
+
+      /*  String type = "Vampir";
+        searchEngine.currentFilter.typeIsSet=true;
+        searchEngine.currentFilter.keySetting.put("typeIsSet",true);
+        searchEngine.currentFilter.cardFilter.put("type",type); */
+
+        searchEngine.enterSetEdition(searchEngine.reader);
         System.out.println(searchEngine.cardcount);
+
+        UserInterface.fxWindow();
         //int multiverseId = 1;
         //Card card = CardAPI.getCard(multiverseId);
         //System.out.println(card.getName());

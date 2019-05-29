@@ -1,42 +1,44 @@
 package ml131.de.hdm_stuttgart.mi;
 
-import org.json.simple.JSONArray;
+import com.google.gson.stream.JsonReader;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+
 
 public class FileManager {
-    JSONParser parser = new JSONParser();
 
-    public FileManager() throws FileNotFoundException {
-    }
+    public static String format;
+    private static InputStream inputStream;
 
-    public static void createFile(String filename){
-        JsonObjectBuilder bobTheBuilder = Json.createObjectBuilder();
-        bobTheBuilder.add("vorname", "Paul");
-
-        JsonObject jo = bobTheBuilder.build();
-
+    static {
         try {
-            FileWriter fw = new FileWriter(filename);
-            JsonWriter jsonWriter = Json.createWriter(fw);
-            jsonWriter.writeObject(jo);
-            jsonWriter.close();
-            fw.close();
-        } catch (IOException e) {
+            inputStream = new FileInputStream("/home/ml131/Desktop/stuff/Modern.json");
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
     }
+
+    public static void getFormat(){
+        format=searchEngine.currentFilter.cardFilter.get("format").toString();
+    }
+
+    public static JsonReader openConnectionToFile(String format)throws IOException{
+
+            try {
+                inputStream = new FileInputStream("/home/ml131/Desktop/stuff/"+format+".json");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+
+        Reader inputStreamReader = new InputStreamReader(inputStream);
+        com.google.gson.stream.JsonReader reader = new com.google.gson.stream.JsonReader(inputStreamReader);
+        return reader;
+    }
+
 
     public static JSONObject database() {
 
@@ -64,7 +66,5 @@ public class FileManager {
 
         return null;
     }
-
-
 
 }

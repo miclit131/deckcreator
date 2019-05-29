@@ -1,4 +1,5 @@
 package ml131.de.hdm_stuttgart.mi.JavaFxUI;
+import ml131.de.hdm_stuttgart.mi.searchEngine;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
@@ -7,6 +8,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.control.Button;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
+import ml131.de.hdm_stuttgart.mi.CardFilter;
+import ml131.de.hdm_stuttgart.mi.searchEngine;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserInterface extends Application{
     Button button;

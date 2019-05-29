@@ -1,18 +1,17 @@
 package ml131.de.hdm_stuttgart.mi;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class CardFilter {
-
+/*
     Boolean cmcIsSet=false;
     Boolean typeIsSet=false;
     Boolean effectIsSet=false;
     Boolean formatIsSet=false;
     Boolean nameIsSet=false;
     Boolean rarityIsSet=false;
-    Boolean colorIsSet=false;
+    Boolean colorIsSet=false;*/
     HashMap<String,Boolean> keySetting= new HashMap<>();{{
         keySetting.put("cmcIsSet",false);
         keySetting.put("typeIsSet",false);
@@ -34,31 +33,31 @@ public class CardFilter {
 
             switch (entry.getKey()) {
                 case "cmc":
-                    cmcIsSet = true;
+                   // cmcIsSet = true;
                     keySetting.put("cmcIsSet",true);
                     break;
                 case "type":
-                    typeIsSet = true;
+                    //typeIsSet = true;
                     keySetting.put("typeIsSet",true);
                     break;
                 case "effect":
-                    effectIsSet = true;
+                   // effectIsSet = true;
                     keySetting.put("textIsSet",true);
                     break;
                 case "format":
-                    formatIsSet = true;
+                    //formatIsSet = true;
                     keySetting.put("formatIsSet",true);
                     break;
                 case "name":
-                    nameIsSet = true;
+                   // nameIsSet = true;
                     keySetting.put("nameIsSet",true);
                     break;
                 case "rarity":
-                    rarityIsSet = true;
+                    //rarityIsSet = true;
                     keySetting.put("rarityIsSet",true);
                     break;
                 case "color":
-                    colorIsSet = true;
+                    //colorIsSet = true;
                     keySetting.put("colorIsSet",true);
                     break;
                 default:

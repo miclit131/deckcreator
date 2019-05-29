@@ -1,28 +1,19 @@
 package ml131.de.hdm_stuttgart.mi;
-import  ml131.de.hdm_stuttgart.mi.JavaFxUI.UserInterface;
 
-import com.google.gson.JsonParser;
-import io.magicthegathering.javasdk.api.CardAPI;
-import io.magicthegathering.javasdk.resource.Card;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
-import java.io.*;
+//import org.json.simple.JSONObject;
+
+import ml131.de.hdm_stuttgart.mi.JavaFxUI.UserInterface;
+
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Iterator;
+
 import java.util.List;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import javax.json.JsonReader;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+//import javax.json.JsonReader;
 
 
 
@@ -33,7 +24,7 @@ import javax.json.JsonReader;
  */
 
 public class App {
-    private static Logger log = LogManager.getLogger(App.class);
+
 
     /**
      * Your application's main entry point.
@@ -43,13 +34,11 @@ public class App {
     public static void main( String[] args ) throws IOException {
         System.out.println( "Hello World!" );
 
-        File f = new File("/home/ml131/Desktop/stuff/Standard.json");
-        if(f.exists()){
-            System.out.println("connected to the file");
-        }
+
 // bug type filter works but not name filter
-        String name="Sonnenkamm-R";
-        searchEngine.currentFilter.nameIsSet=true;
+        //String name="Sonnenkamm-R";
+       String name="Akad";
+        //searchEngine.currentFilter.nameIsSet=true;
         searchEngine.currentFilter.keySetting.put("nameIsSet",true);
         searchEngine.currentFilter.cardFilter.put("name",name);
 
@@ -58,10 +47,12 @@ public class App {
         searchEngine.currentFilter.keySetting.put("typeIsSet",true);
         searchEngine.currentFilter.cardFilter.put("type",type); */
 
-        searchEngine.enterSetEdition(searchEngine.reader);
+       // searchEngine.enterSetEdition(FileManager.reader);
+        searchEngine.enterSetEdition(FileManager.openConnectionToFile("Modern"));
         System.out.println(searchEngine.cardcount);
 
         UserInterface.fxWindow();
+        System.out.println("it worked!");
         //int multiverseId = 1;
         //Card card = CardAPI.getCard(multiverseId);
         //System.out.println(card.getName());
@@ -104,12 +95,5 @@ public class App {
 
     }
 
-    /**
-     * This method purely exists for providing Junit tests.
-     *
-     * @param a first parameter
-     * @param b second parameter
-     * @return the sum of both parameters.
-     */
 
 

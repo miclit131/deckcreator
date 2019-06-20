@@ -3,6 +3,8 @@ package ml131.de.hdm_stuttgart.mi;
 
 
 import com.google.gson.stream.JsonReader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,29 +13,36 @@ import java.util.Map;
 
 public class searchEngine {
 
+    private static Logger log = LogManager.getLogger(searchEngine.class);
+    static String logMessage;
     static int cardcount = 0;
     static HashMap<String, Object> temporaryCard = new HashMap<>();
     public static CardFilter currentFilter = new CardFilter();
-    static ArrayList<Card> currentResults=new ArrayList<>();
+    public static ArrayList<Card> currentResults=new ArrayList<>();
     static String language = "German";
     static boolean cardCheckFailed = false;
 
 
     static boolean checkFilterAndSaveToTemporaryCard(String filterKey, JsonReader reader) throws IOException {
+        Boolean filterIsSet=searchEngine.currentFilter.keySetting.get(filterKey + "IsSet");
+        String filterValue=(String)currentFilter.cardFilter.get(filterKey);
         String cardTypeText = reader.nextString();
-        //filter is set and fullFilled
-        if (searchEngine.currentFilter.keySetting.get(filterKey + "IsSet") &&
-                cardTypeText.contains(searchEngine.currentFilter.cardFilter.get(filterKey).toString())) {
+        if (filterIsSet &&
+                cardTypeText.contains(filterValue)) {
             searchEngine.temporaryCard.put(filterKey, cardTypeText);
-            System.out.println(filterKey + " " + cardTypeText);
+            logMessage=String.format("filterkey:%6s { %30s matched cardFilter : %12s }",filterKey,cardTypeText,filterValue);
+            log.trace(logMessage);
             return true;
-            //filter isn't set
-        } else if (!searchEngine.currentFilter.keySetting.get(filterKey + "IsSet")) {
+        } else if (!filterIsSet) {
             searchEngine.temporaryCard.put(filterKey, cardTypeText);
+            logMessage=String.format("filterkey:%6s { %28s / has been added to temporary card }",filterKey,cardTypeText);
+            log.trace(logMessage);
             return true;
             //filter is set but failed
         } else {
             searchEngine.cardCheckFailed = true;
+            logMessage=String.format("filterkey:%6s { %30s failed cardFilter : %12s }",filterKey,cardTypeText,filterValue);
+            log.trace(logMessage);
             return false;
         }
     }
@@ -41,6 +50,8 @@ public class searchEngine {
     static void saveToTemporaryCard(String filterKey, JsonReader reader) throws IOException {
         String cardTypeText = reader.nextString();
         searchEngine.temporaryCard.put(filterKey, cardTypeText);
+        logMessage=String.format("filterkey:%6s { %28s / has been added to temporary card }",filterKey,cardTypeText);
+        log.trace(logMessage);
     }
 
     static void runTilEndObject(JsonReader reader) throws IOException {
@@ -56,10 +67,9 @@ public class searchEngine {
                                          String format,
                                          String name,
                                          String rarity) {
-
         Map<String, Object> filterImage = new HashMap<>();
         if (!cmc.equals("")) {
-            filterImage.put("cmt", cmc);
+            filterImage.put("cmc", cmc);
         }
         if (!type.equals("")) {
             filterImage.put("type", type);
@@ -80,6 +90,9 @@ public class searchEngine {
             filterImage.put("rarity", rarity);
         }
         searchEngine.currentFilter = new CardFilter(filterImage);
+        logMessage=String.format("CurrentFilter created with filterImage : %s",filterImage);
+        log.info(logMessage);
+
     }
 
 
@@ -110,7 +123,6 @@ public class searchEngine {
     }
 
     static void enterForeigenData(JsonReader reader) throws IOException {
-
         reader.beginArray();
         while (reader.hasNext()) {
             reader.beginObject();
@@ -127,6 +139,9 @@ public class searchEngine {
                     reader.endArray();
                     jsonName = reader.nextName();
                     searchEngine.temporaryCard.put("colors", cardColors);
+                    logMessage=String.format("filterkey:%6s { %28s / has been added to temporary card }","colors",cardColors);
+                    log.trace(logMessage);
+
                 }
 
 
@@ -239,7 +254,12 @@ public class searchEngine {
                         temporaryCard.get("manaCost").toString());
                 //save everything in a resultList
                 searchEngine.currentResults.add(card);
-                System.out.println(card.cardFeature);
+               // System.out.println(card.cardFeature);
+                logMessage=String.format("{TemporaryCard : %s has been COMPLETED and ADDED to currentResults Values :\n %s }\n",temporaryCard.get("name"),card.cardFeature);
+                log.info(logMessage);
+            }else{
+                logMessage=String.format("{TemporaryCard: FAILED FILTER missing %d entries, last image of card :\n %s }\n",8-temporaryCard.size(),temporaryCard);
+                log.debug(logMessage);
             }
             cardCheckFailed = false;
             temporaryCard = new HashMap<>();

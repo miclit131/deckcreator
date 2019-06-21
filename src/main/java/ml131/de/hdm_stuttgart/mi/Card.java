@@ -1,5 +1,7 @@
 package ml131.de.hdm_stuttgart.mi;
 
+import javafx.scene.control.Hyperlink;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -12,7 +14,7 @@ public class Card {
     private String effect;
     private String format;
     private String rarity;
-    private String pictureLink;
+    private Hyperlink pictureLink;
     private String cardmarketLink;
     private ArrayList<String> colors;
     private String language;
@@ -31,7 +33,7 @@ public class Card {
                 String effect,
                 String format,
                 String rarity,
-                String pictureLink,
+                Hyperlink pictureLink,
                 String cardmarketLink,
                 ArrayList<String> colors,
                 String language,
@@ -46,6 +48,7 @@ public class Card {
         cardFeature.put("format",format);
         cardFeature.put("rarity",rarity);
         cardFeature.put("pictureLink",pictureLink);
+        this.pictureLink=pictureLink;
         cardFeature.put("cardmarketLink",cardmarketLink);
         cardFeature.put("colors",colors);
         cardFeature.put("language",language);
@@ -75,5 +78,13 @@ public class Card {
 
     public String getType() {
         return type;
+    }
+
+    public void setPictureLink(Hyperlink pictureLink) {
+        this.pictureLink = pictureLink;
+    }
+
+    public Hyperlink getPictureLink() {
+        return pictureLink;
     }
 }

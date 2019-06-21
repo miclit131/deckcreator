@@ -3,8 +3,12 @@ package ml131.de.hdm_stuttgart.mi;
 
 //import org.json.simple.JSONObject;
 
+import javafx.application.HostServices;
+import ml131.de.hdm_stuttgart.mi.JavaFxUI.AlertBox;
 import ml131.de.hdm_stuttgart.mi.JavaFxUI.UserInterface;
-
+import ml131.de.hdm_stuttgart.mi.exceptions.ConnectionNotFoundException;
+import ml131.de.hdm_stuttgart.mi.exceptions.ExceptionCluster;
+import ml131.de.hdm_stuttgart.mi.exceptions.ExceptionCluster;
 import java.text.ParseException;
 import java.util.List;
 import java.io.FileNotFoundException;
@@ -31,10 +35,8 @@ public class App {
      *
      * @param args Yet unused
      */
-    public static void main( String[] args ) throws IOException {
+    public static void main( String[] args ) throws IOException, ExceptionCluster {
         System.out.println("Hello World!");
-
-
 // bug type filter works but not name filter
 
         UserInterface.fxWindow();

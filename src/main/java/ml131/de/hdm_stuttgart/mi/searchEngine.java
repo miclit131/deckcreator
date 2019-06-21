@@ -1,12 +1,18 @@
 package ml131.de.hdm_stuttgart.mi;
 
 
-
 import com.google.gson.stream.JsonReader;
+import com.sun.tools.javac.Main;
+import javafx.application.HostServices;
+import javafx.scene.control.Hyperlink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.*;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +21,8 @@ public class searchEngine {
 
     private static Logger log = LogManager.getLogger(searchEngine.class);
     static String logMessage;
-    static int cardcount = 0;
+    public static int cardcount = 0;
+    public static int cardcountFirstSearch=0;
     static HashMap<String, Object> temporaryCard = new HashMap<>();
     public static CardFilter currentFilter = new CardFilter();
     public static ArrayList<Card> currentResults=new ArrayList<>();
@@ -199,6 +206,7 @@ public class searchEngine {
                                         break;
                                     case "name":
                                         cardcount++;
+                                        cardcountFirstSearch++;
                                         if (!checkFilterAndSaveToTemporaryCard("name", reader)) {
                                             break cardinformation;
                                         }
@@ -239,6 +247,15 @@ public class searchEngine {
                 }
             }
             reader.endObject();
+            Hyperlink url = new Hyperlink("https://img.scryfall.com/cards/normal/en/exp/43.jpg?1517813031");
+            url.setOnAction(e->{
+
+                try {
+                    new ProcessBuilder("x-www-browser", url.getText()).start();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
             if (!cardCheckFailed&&temporaryCard.size()==8) {
                 //write to card to collection
                 Card card = new Card(temporaryCard.get("name").toString(),
@@ -247,7 +264,7 @@ public class searchEngine {
                         temporaryCard.get("text").toString(),
                         FileManager.format,
                         temporaryCard.get("rarity").toString(),
-                        "https://img.scryfall.com/cards/normal/en/exp/43.jpg?1517813031",
+                        url,
                         temporaryCard.get("cardmarketLink").toString(),
                         (ArrayList<String>) temporaryCard.get("colors"),
                         searchEngine.language,

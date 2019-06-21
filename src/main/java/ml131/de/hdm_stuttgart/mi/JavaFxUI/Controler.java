@@ -9,8 +9,10 @@ import ml131.de.hdm_stuttgart.mi.FileManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Controler {
+
     Boolean cmcIsSet=false;
     Boolean typeIsSet=false;
     Boolean effectIsSet=false;
@@ -35,7 +37,10 @@ public class Controler {
 
     public static ObservableList<Card> getCards(){
         ObservableList<Card> cards= FXCollections.observableArrayList();
-        cards.addAll(searchEngine.currentResults);
+        //Stream
+        Arrays.stream(searchEngine.currentResults.toArray()).forEach(n->cards.add((Card)n));
+        //non-Stream solution
+       // cards.addAll(searchEngine.currentResults);
 
         return cards;
     }

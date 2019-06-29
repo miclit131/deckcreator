@@ -4,14 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CardFilter {
-/*
-    Boolean cmcIsSet=false;
-    Boolean typeIsSet=false;
-    Boolean effectIsSet=false;
-    Boolean formatIsSet=false;
-    Boolean nameIsSet=false;
-    Boolean rarityIsSet=false;
-    Boolean colorIsSet=false;*/
+    /*
+        Boolean cmcIsSet=false;
+        Boolean typeIsSet=false;
+        Boolean effectIsSet=false;
+        Boolean formatIsSet=false;
+        Boolean nameIsSet=false;
+        Boolean rarityIsSet=false;
+        Boolean colorIsSet=false;*/
     HashMap<String,Boolean> keySetting= new HashMap<>();{{
         keySetting.put("cmcIsSet",false);
         keySetting.put("typeIsSet",false);
@@ -21,7 +21,7 @@ public class CardFilter {
         keySetting.put("rarityIsSet",false);
         keySetting.put("colorIsSet",false);
 
-     } }
+    } }
     HashMap<String,Object> cardFilter = new HashMap<>();
     String[] color=new String[6];
 
@@ -33,7 +33,7 @@ public class CardFilter {
 
             switch (entry.getKey()) {
                 case "cmc":
-                   // cmcIsSet = true;
+                    // cmcIsSet = true;
                     keySetting.put("cmcIsSet",true);
                     break;
                 case "type":
@@ -41,7 +41,7 @@ public class CardFilter {
                     keySetting.put("typeIsSet",true);
                     break;
                 case "effect":
-                   // effectIsSet = true;
+                    // effectIsSet = true;
                     keySetting.put("textIsSet",true);
                     break;
                 case "format":
@@ -49,7 +49,7 @@ public class CardFilter {
                     keySetting.put("formatIsSet",true);
                     break;
                 case "name":
-                   // nameIsSet = true;
+                    // nameIsSet = true;
                     keySetting.put("nameIsSet",true);
                     break;
                 case "rarity":

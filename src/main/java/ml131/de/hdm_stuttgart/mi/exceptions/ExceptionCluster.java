@@ -4,6 +4,6 @@ package ml131.de.hdm_stuttgart.mi.exceptions;
     ExceptionCluster(String errorCall){
         super(errorCall);
     }
-    
+
 }
 

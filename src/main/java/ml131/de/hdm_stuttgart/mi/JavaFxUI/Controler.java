@@ -29,18 +29,15 @@ public class Controler {
     String name;
     String rarity;
 
-    void setUpAndSearch() throws IOException {
-        searchEngine.fillCurrentFilter(cmc,type, effect,color,format,name,rarity);
-        FileManager.getFormat();
-        searchEngine.enterSetEdition(FileManager.openConnectionToFile(FileManager.format));
-    }
+//    void setUpAndSearch() throws IOException {
+//        searchEngine.fillCurrentFilter(cmc,type, effect,color,format,name,rarity);
+//        FileManager.getFormat();
+//        searchEngine.enterSetEdition(FileManager.openConnectionToFile(FileManager.format));
+//    }
 
     public static ObservableList<Card> getCards(){
         ObservableList<Card> cards= FXCollections.observableArrayList();
-        //Stream
         Arrays.stream(searchEngine.currentResults.toArray()).forEach(n->cards.add((Card)n));
-        //non-Stream solution
-       // cards.addAll(searchEngine.currentResults);
 
         return cards;
     }

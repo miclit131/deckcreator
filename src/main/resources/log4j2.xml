@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
+
     <Appenders>
         <File name="A1" fileName="A1.log" append="false">
             <PatternLayout pattern="%t %-5p %c{2} - %m%n"/>
@@ -7,15 +8,33 @@
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
         </Console>
-    </Appenders>
-    <Loggers>
 
+        <RollingFile
+                name="rollingFile"
+                fileName="app.log"
+                filePattern="${LOG_DIR}/application.%i.log.gz"
+                ignoreExceptions="false">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss} %-5p %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="5" />
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
         <!-- You my want to define class or package level per-logger rules -->
-        <Logger name="ml131.de.hdm_stuttgart.mi.App" level="debug">
-            <AppenderRef ref="A1"/>
+        <Logger name="ml131.de.hdm_stuttgart.mi.searchEngine" level="info">
+            <AppenderRef ref="rollingFile"/>
         </Logger>
+        <Logger name="ml131.de.hdm_stuttgart.mi.JavaFxUI.UserInterface" level="info">
+            <AppenderRef ref="rollingFile"/>
+        </Logger>
+
         <Root level="info">
-            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="rollingFile" />
         </Root>
     </Loggers>
 </Configuration>

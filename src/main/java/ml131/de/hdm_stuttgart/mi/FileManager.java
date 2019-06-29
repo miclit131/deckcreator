@@ -72,7 +72,8 @@ public class FileManager {
     }
 
     public static boolean pingURL(String url, int timeout) throws ExceptionCluster {
-        url = url.replaceFirst("^https", "http"); // Otherwise an exception may be thrown on invalid SSL certificates.
+        // Otherwise an exception may be thrown on invalid SSL certificates.
+        url = url.replaceFirst("^https", "http");
 
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();

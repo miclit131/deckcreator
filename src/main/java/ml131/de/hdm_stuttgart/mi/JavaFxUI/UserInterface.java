@@ -1,6 +1,13 @@
 package ml131.de.hdm_stuttgart.mi.JavaFxUI;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
-import ml131.de.hdm_stuttgart.mi.exceptions.ExceptionCluster;
+import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import ml131.de.hdm_stuttgart.mi.searchEngine;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -15,31 +22,36 @@ import ml131.de.hdm_stuttgart.mi.*;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 
-public class    UserInterface extends Application {
-    Button button;
-    Button testConnection;
+public class  UserInterface extends Application {
+
+    private Button searchButton;
     private TableView<Card> searchDisplayTable;
     private TableView<Card> deckDisplayTable;
     private TableColumn<Card, String> nameColumn;
     private TableColumn<Card, Hyperlink> urlColumn;
+    private TableColumn<Card, Hyperlink> urlColumn2;
     private static String name="";
     private static String effect="";
     private static String type="";
-    private Logger UiLogger = LogManager.getLogger(searchEngine.class);
+    private Pagination pagination;
     public static void fxWindow() {
         launch();
     }
 
     @Override
     public void start(Stage primaryStage) {
+        int numInstances = 1094;
+        int pageSize = 50;
+        int pages = numInstances / pageSize;
+        pagination = new Pagination(pages, 0);
+
         primaryStage.setTitle("test window");
+
 
         TextField nameFilter = new TextField ();
         nameFilter.setPromptText("search for a card name");
@@ -69,25 +81,9 @@ public class    UserInterface extends Application {
         colorSelection.getChildren().addAll(colorSelection1,colorSelection2);
         VBox filters =new VBox();
         filters.getChildren().addAll(colorSelection,textFilter);
-        testConnection = new Button("test connection");
-        testConnection.setOnAction(e->{
-            try{
-            if(!FileManager.pingURL("google.com",500)){
-                AlertBox.display("Connection","connection successful");
-                UiLogger.debug("Connection has been tested, SUCCESSFUL");
-            }else{
-                AlertBox.display("Connection","failed");
-                UiLogger.debug("Connection test FAILED");
-            }}catch(ExceptionCluster ex){
-                UiLogger.debug("Connection test FAILED");
-                AlertBox.display(ex.getErrorType(),ex.getMessage());
-            }
 
-        });
-        button = new Button("Search");
-        button.setOnAction(e -> {
-            System.out.println("you clicked me");
-
+        searchButton = new Button("Search");
+        searchButton.setOnAction(e -> {
             if ((nameFilter.getText() != null && !nameFilter.getText().isEmpty())) {
                 UserInterface.name=nameFilter.getText();
             }
@@ -97,28 +93,37 @@ public class    UserInterface extends Application {
             if ((typeFilter.getText() != null && !typeFilter.getText().isEmpty())) {
                 UserInterface.type=typeFilter.getText();
             }
-            searchEngine.currentFilter=new CardFilter();
-            searchEngine.currentResults=new ArrayList<>();
-            searchEngine.fillCurrentFilter("",UserInterface.type,UserInterface.effect,"","",UserInterface.name,"");
-            //searchEngine.fillCurrentFilter("","","","","",name,"");
-            try {
-                searchEngine.enterSetEdition(FileManager.openConnectionToFile("Standard"));
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            searchDisplayTable.setItems(Controler.getCards());
-            System.out.println(searchEngine.cardcount);
-            System.out.println();
-            searchEngine.cardcount=0;
+            ObservableList<Card> cards = runSearch(pageSize, 1);
+            searchDisplayTable.setItems(cards);
         });
-        //Name column
-        TableColumn<Card, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setMinWidth(50);
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-        //url column
-        urlColumn = new TableColumn<>("Address");
+        pagination.setStyle("-fx-border-color:#75ff54;");
+        pagination.setPageFactory(new Callback<Integer, Node>() {
+            @Override
+            public Node call(Integer pageIndex) {
+                if ((nameFilter.getText() != null && !nameFilter.getText().isEmpty())) {
+                    UserInterface.name=nameFilter.getText();
+                }
+                if ((effectFilter.getText() != null && !effectFilter.getText().isEmpty())) {
+                    UserInterface.effect=effectFilter.getText();
+                }
+                if ((typeFilter.getText() != null && !typeFilter.getText().isEmpty())) {
+                    UserInterface.type=typeFilter.getText();
+                }
+                ObservableList<Card> cards = runSearch(pageSize, pageIndex+1);
+                searchDisplayTable.setItems(cards);
+                return searchDisplayTable;
+            }
+        });
+        AnchorPane anchor = new AnchorPane();
+        AnchorPane.setTopAnchor(pagination, 10.0);
+        AnchorPane.setRightAnchor(pagination, 10.0);
+        AnchorPane.setBottomAnchor(pagination, 10.0);
+        AnchorPane.setLeftAnchor(pagination, 10.0);
+        anchor.getChildren().addAll(pagination);
+
+        //url / name column
+        urlColumn = new TableColumn<>("Name");
         urlColumn.setCellValueFactory(new PropertyValueFactory<>("pictureLink"));
         urlColumn.setCellFactory(new HyperlinkCell());
 
@@ -137,38 +142,61 @@ public class    UserInterface extends Application {
         addToDeckColumn.setMinWidth(50);
 
 
-        //Name column2
-        TableColumn<Card, String> nameColumn2 = new TableColumn<>("Name");
-        nameColumn.setMinWidth(50);
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        // url / name column 2
+        urlColumn2 = new TableColumn<>("Name");
+        urlColumn2.setCellValueFactory(new PropertyValueFactory<>("pictureLink"));
+        urlColumn2.setCellFactory(new HyperlinkCell());
 
         //cmc column2
         TableColumn<Card, String> manaCostColumn2 = new TableColumn<>("Manacost");
-        manaCostColumn.setMinWidth(50);
-        manaCostColumn.setCellValueFactory(new PropertyValueFactory<>("manaCost"));
+        manaCostColumn2.setMinWidth(50);
+        manaCostColumn2.setCellValueFactory(new PropertyValueFactory<>("manaCost"));
 
         //type column2
         TableColumn<Card, String> typeColumn2 = new TableColumn<>("Type");
-        typeColumn.setMinWidth(50);
-        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        typeColumn2.setMinWidth(50);
+        typeColumn2.setCellValueFactory(new PropertyValueFactory<>("type"));
 
         searchDisplayTable = new TableView<>();
-        searchDisplayTable.getColumns().addAll(nameColumn, manaCostColumn, typeColumn,urlColumn);
+        searchDisplayTable.getColumns().addAll(urlColumn, manaCostColumn, typeColumn);
+
         deckDisplayTable = new TableView<>();
-        deckDisplayTable.getColumns().addAll(nameColumn2, manaCostColumn2, typeColumn2);
+        deckDisplayTable.getColumns().addAll(urlColumn2, manaCostColumn2, typeColumn2);
+
+
+
+
+//        searchDisplayTable.setRowFactory(tableView -> {
+//            final TableRow<Card> row = new TableRow<>();
+//            row.hoverProperty().addListener((observable) -> {
+//                final Card card = row.getItem();
+//                if (row.isHover() && card != null) {
+//                    String urlString = card.getRawURL();
+//                    ImageView view = new ImageView(new Image(urlString));
+//                    view.setFitHeight(400);
+//                    view.setFitWidth(400);
+//                    view.setPreserveRatio(true);
+//
+//                    button.setGraphic(view);
+//                }
+//            });
+//
+//            return row;
+//        });
+
 
         addButtonToTable(searchDisplayTable);
         addButtonToTable(deckDisplayTable);
         HBox hBox = new HBox();
         hBox.setPadding(new Insets(10,10,10,10));
         hBox.setSpacing(10);
-        hBox.getChildren().addAll(searchDisplayTable,deckDisplayTable,filters);
+        hBox.getChildren().addAll(anchor, deckDisplayTable,filters);
 
 
         VBox vBox = new VBox();
         vBox.setPadding(new Insets(10,10,10,10));
         vBox.setSpacing(10);
-        vBox.getChildren().addAll(button,hBox,testConnection);
+        vBox.getChildren().addAll(searchButton,hBox);
 
         Scene scene = new Scene(vBox);
         primaryStage.setScene(scene);
@@ -192,6 +220,7 @@ public class    UserInterface extends Application {
                             Card currentIndexCard = getTableRow().getItem();
                             cards.add(currentIndexCard);
                             deckDisplayTable.getItems().addAll(cards);
+//                            deckDisplayTable.setItems(cards);
                             System.out.println(currentIndexCard.getName());
                             tableView.getItems().remove(getIndex());
                         });
@@ -213,6 +242,24 @@ public class    UserInterface extends Application {
 
         colBtn.setCellFactory(cellFactory);
         tableView.getColumns().add(colBtn);
+    }
+
+    private static ObservableList<Card> runSearch(int pageSize, int currentPage){
+        searchEngine.currentFilter=new CardFilter();
+        searchEngine.currentResults=new ArrayList<>();
+        searchEngine.includedPages=0;
+        searchEngine.fillCurrentFilter("",UserInterface.type,UserInterface.effect,"","",UserInterface.name,"");
+        //searchEngine.fillCurrentFilter("","","","","",name,"");
+        try {
+            searchEngine.enterSetEdition(FileManager.openConnectionToFile("Standard"), pageSize, currentPage);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+//        searchDisplayTable.setItems(Controler.getCards());
+        System.out.println(searchEngine.cardcount);
+        searchEngine.cardcount=0;
+        return Controler.getCards();
     }
 
     public class HyperlinkCell implements Callback<TableColumn<Card, Hyperlink>, TableCell<Card, Hyperlink>> {

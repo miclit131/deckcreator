@@ -17,11 +17,10 @@ public class junitTests {
 
     @Before
     public void setUp() throws IOException {
-
+        UserInterface.fxWindow();
     }
     @Test
     public void amountOfCardsFiltered() throws IOException {
-        UserInterface.fxWindow();
 
         Assert.assertEquals(searchEngine.cardcountFirstSearch,1904);
     }

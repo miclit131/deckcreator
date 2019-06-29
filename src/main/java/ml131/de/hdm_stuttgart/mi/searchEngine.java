@@ -2,30 +2,30 @@ package ml131.de.hdm_stuttgart.mi;
 
 
 import com.google.gson.stream.JsonReader;
-import com.sun.tools.javac.Main;
-import javafx.application.HostServices;
 import javafx.scene.control.Hyperlink;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class searchEngine {
 
+    private final static boolean runSequential = false;
+    private static Map<String, Object> filterImage = new HashMap<>();
     private static Logger log = LogManager.getLogger(searchEngine.class);
     static String logMessage;
     public static int cardcount = 0;
-    public static int cardcountFirstSearch=0;
     static HashMap<String, Object> temporaryCard = new HashMap<>();
     public static CardFilter currentFilter = new CardFilter();
     public static ArrayList<Card> currentResults=new ArrayList<>();
+    public static int cardcountFirstSearch=0;
+
+    private static List queue = Collections.synchronizedList(new LinkedList<String>());
+
+    private static ArrayList<Thread> workers = new ArrayList<>();
+
+    public static int includedPages = 0;
     static String language = "German";
     static boolean cardCheckFailed = false;
 
@@ -74,9 +74,10 @@ public class searchEngine {
                                          String format,
                                          String name,
                                          String rarity) {
-        Map<String, Object> filterImage = new HashMap<>();
+
+
         if (!cmc.equals("")) {
-            filterImage.put("cmc", cmc);
+            searchEngine.filterImage.put("cmc", cmc);
         }
         if (!type.equals("")) {
             filterImage.put("type", type);
@@ -103,23 +104,38 @@ public class searchEngine {
     }
 
 
-    public static void enterSetEdition(JsonReader reader) throws IOException {
+    public static void enterSetEdition(JsonReader reader, int pageSize, int currentPage) throws IOException {
+        queue = Collections.synchronizedList(new LinkedList<String>());
+        workers = new ArrayList<>();
+
         reader.beginObject();
         while (reader.hasNext()) {
             reader.nextName();
-            enterCardSection(reader);
+            enterCardSection(reader, pageSize, currentPage);
         }
-        reader.endObject();
-        searchRequestedResults.saveResult(currentResults,currentFilter);
+
+        if(!runSequential) {
+            reader.endObject();
+            searchRequestedResults.saveResult(currentResults, currentFilter);
+            for (int i = 0; i < workers.size(); ++i) {
+                try {
+                    workers.get(i).join();
+                } catch (Exception e) {
+                    System.out.println();
+                }
+            }
+
+            currentResults.addAll(queue);
+        }
     }
 
-    static void enterCardSection(JsonReader reader) throws IOException {
+    static void enterCardSection(JsonReader reader, int pageSize, int currentPage) throws IOException {
         reader.beginObject();
         while (reader.hasNext()) {
             String name = reader.nextName();
 
             if (name.equals("cards")) {
-                enterForeigenData(reader);
+                enterForeigenData(reader, pageSize, currentPage);
             } else if (name.equals("")) {
 
             } else {
@@ -129,7 +145,7 @@ public class searchEngine {
         reader.endObject();
     }
 
-    static void enterForeigenData(JsonReader reader) throws IOException {
+    static void enterForeigenData(JsonReader reader, int pageSize, int currentPage) throws IOException {
         reader.beginArray();
         while (reader.hasNext()) {
             reader.beginObject();
@@ -165,6 +181,7 @@ public class searchEngine {
                     reader.endObject();
                     jsonName = reader.nextName();
                 }
+
                 if (jsonName.equals("rarity")) {
                     searchEngine.checkFilterAndSaveToTemporaryCard("rarity", reader);
                     jsonName = reader.nextName();
@@ -178,7 +195,6 @@ public class searchEngine {
                     searchEngine.saveToTemporaryCard("convertedManaCost", reader);
                     jsonName = reader.nextName();
                 }
-
 
                 if (jsonName.equals("foreignData")) {
 
@@ -207,6 +223,7 @@ public class searchEngine {
                                     case "name":
                                         cardcount++;
                                         cardcountFirstSearch++;
+
                                         if (!checkFilterAndSaveToTemporaryCard("name", reader)) {
                                             break cardinformation;
                                         }
@@ -220,7 +237,7 @@ public class searchEngine {
                                         //searchEngine.temporaryCard.put("effect",reader.nextString());
                                         break;
                                     case "multiverseId":
-                                        reader.skipValue();
+                                        saveToTemporaryCard("multiverseId", reader);
                                         break;
                                     default:
                                         //programm geht immer in den default branch
@@ -256,23 +273,48 @@ public class searchEngine {
                     ex.printStackTrace();
                 }
             });
-            if (!cardCheckFailed&&temporaryCard.size()==8) {
-                //write to card to collection
-                Card card = new Card(temporaryCard.get("name").toString(),
-                        temporaryCard.get("convertedManaCost").toString(),
-                        temporaryCard.get("type").toString(),
-                        temporaryCard.get("text").toString(),
-                        FileManager.format,
-                        temporaryCard.get("rarity").toString(),
-                        url,
-                        temporaryCard.get("cardmarketLink").toString(),
-                        (ArrayList<String>) temporaryCard.get("colors"),
-                        searchEngine.language,
-                        temporaryCard.get("manaCost").toString());
-                //save everything in a resultList
-                searchEngine.currentResults.add(card);
-               // System.out.println(card.cardFeature);
-                logMessage=String.format("{TemporaryCard : %s has been COMPLETED and ADDED to currentResults Values :\n %s }\n",temporaryCard.get("name"),card.cardFeature);
+
+            includedPages += 1;
+            boolean includeCard = includedPages <= currentPage*pageSize && includedPages >= (currentPage-1)*pageSize;
+            if (!cardCheckFailed && temporaryCard.size()==9 && includeCard) {
+
+                if(runSequential) {
+                    //write to card to collection
+                    Card card = new Card(temporaryCard.get("name").toString(),
+                            temporaryCard.get("convertedManaCost").toString(),
+                            temporaryCard.get("type").toString(),
+                            temporaryCard.get("text").toString(),
+                            FileManager.format,
+                            temporaryCard.get("rarity").toString(),
+                            url,
+                            temporaryCard.get("cardmarketLink").toString(),
+                            (ArrayList<String>) temporaryCard.get("colors"),
+                            searchEngine.language,
+                            temporaryCard.get("manaCost").toString(),
+                            temporaryCard.get("multiverseId").toString());
+                    searchEngine.currentResults.add(card);
+                } else {
+                    ParameterContainer params = new ParameterContainer();
+                    params.name = temporaryCard.get("name").toString();
+                    params.convertedManaCost = temporaryCard.get("convertedManaCost").toString();
+                    params.type = temporaryCard.get("type").toString();
+                    params.effect = temporaryCard.get("text").toString();
+                    params.format = FileManager.format;
+                    params.rarity = temporaryCard.get("rarity").toString();
+                    params.pictureLink = url;
+                    params.cardmarketLink = temporaryCard.get("cardmarketLink").toString();
+                    params.colors = (ArrayList<String>) temporaryCard.get("colors");
+                    params.language = searchEngine.language;
+                    params.manaCost = temporaryCard.get("manaCost").toString();
+                    params.multiverseId = temporaryCard.get("multiverseId").toString();
+
+                    Thread t = new CardInstantiationThread(params, queue);
+                    t.start();
+                    log.info("thread "+t+" has been initialized and started");
+                    workers.add(t);
+                }
+                // System.out.println(card.cardFeature);
+//                logMessage=String.format("{TemporaryCard : %s has been COMPLETED and ADDED to currentResults Values :\n %s }\n",temporaryCard.get("name"),card.cardFeature);
                 log.info(logMessage);
             }else{
                 logMessage=String.format("{TemporaryCard: FAILED FILTER missing %d entries, last image of card :\n %s }\n",8-temporaryCard.size(),temporaryCard);
@@ -282,6 +324,42 @@ public class searchEngine {
             temporaryCard = new HashMap<>();
         }
         reader.endArray();
-
     }
+}
+
+class CardInstantiationThread extends Thread {
+
+    private ParameterContainer params;
+    private final List<Card> queue;
+
+    CardInstantiationThread(ParameterContainer params, List queue){
+        this.params = params;
+        this.queue = queue;
+    }
+
+    public void run() {
+        Card tmp = new Card(params.name, params.convertedManaCost, params.type, params.effect, params.format,
+                params.rarity, params.pictureLink, params.cardmarketLink, params.colors, params.language,
+                params.manaCost, params.multiverseId);
+        queue.add(tmp);
+    }
+
+}
+
+class ParameterContainer{
+
+    String name="";
+    String convertedManaCost="";
+    String type="";
+    String effect="";
+    String format="";
+    String rarity="";
+    Hyperlink pictureLink=null;
+    String cardmarketLink="";
+    ArrayList<String> colors=null;
+    String language="";
+    String manaCost="";
+    String multiverseId="";
+
+
 }

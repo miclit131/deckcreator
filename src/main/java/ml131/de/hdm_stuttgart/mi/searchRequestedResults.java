@@ -17,8 +17,8 @@ public class searchRequestedResults {
         HashMap<String,Card> cardHashMap= new HashMap<>();
 
         for (Card card: result
-             ) {
-           cardHashMap.put(card.cardFeature.get("name").toString(),card);
+        ) {
+            cardHashMap.put(card.cardFeature.get("name").toString(),card);
         }
 
         searchValues.add(cardHashMap);
@@ -27,7 +27,7 @@ public class searchRequestedResults {
             put("searchnumber:"+resultcount,searchValues);
         }});
 
-      //  result.add("requestcount"+resultcount,new HashMap<String,Object>(){})
-resultcount++;
+        //  result.add("requestcount"+resultcount,new HashMap<String,Object>(){})
+        resultcount++;
     }
 }
